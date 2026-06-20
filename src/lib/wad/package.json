@@ -1,0 +1,5 @@
+{
+  "name": "@gk-doom/wad",
+  "type": "module",
+  "main": "src/index.js"
+}

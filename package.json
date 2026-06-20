@@ -20,7 +20,8 @@
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "workspaces": [
-    "src/services/web"
+    "src/services/web",
+    "src/lib/wad"
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",

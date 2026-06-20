@@ -7,6 +7,12 @@ A browser-based DOOM clone that reads the original shareware WAD file and render
 **WAD** (Where's All the Data):
 The binary file format used by DOOM to store all game assets; the shareware `doom1.wad` is the single data source for this project.
 
+**Lump Directory**:
+The parsed, indexed table of all lumps in a WAD, built from the binary directory section at parse time; the in-memory structure that backs all lump lookups.
+
+**Map Marker**:
+A zero-byte lump (e.g. `E1M1`) that signals the start of a map's lump group in the Lump Directory; the lumps immediately following a Map Marker (up to the next marker) belong to that map.
+
 **Lump**:
 A named, contiguous block of data inside a WAD file; all map geometry, textures, and metadata are stored as lumps.
 
