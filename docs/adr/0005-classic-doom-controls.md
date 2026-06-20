@@ -1,0 +1,3 @@
+# Classic DOOM controls with no vertical look
+
+Player controls use WASD for movement/strafing and mouse X-axis (via Pointer Lock) for yaw rotation. Vertical look (pitch) is not implemented. This matches the 2.5D projection model of the BSP renderer, where the horizon is a fixed vertical centre point. Pitch can be added later as a non-breaking change (offsetting the horizon line) without touching the BSP traversal or column math. Solid-wall collision only: 1-sided linedefs block movement; 2-sided linedefs are always passable regardless of sector height differences. Height-based passability (step limits, ceiling gap checks) is out of scope for this milestone.
