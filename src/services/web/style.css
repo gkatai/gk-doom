@@ -1,0 +1,30 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-family: monospace;
+  font-size: 24px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#overlay.hidden {
+  display: none;
+}
