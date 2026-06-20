@@ -21,7 +21,8 @@
   },
   "workspaces": [
     "src/services/web",
-    "src/lib/wad"
+    "src/lib/wad",
+    "src/lib/map"
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",

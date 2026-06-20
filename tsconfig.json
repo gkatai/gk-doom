@@ -7,7 +7,7 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": ["src/**/*.js"]
 }

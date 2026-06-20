@@ -16,8 +16,9 @@ A zero-byte lump (e.g. `E1M1`) that signals the start of a map's lump group in t
 **Lump**:
 A named, contiguous block of data inside a WAD file; all map geometry, textures, and metadata are stored as lumps.
 
-**Map**:
+**Map** (`DoomMap` in code):
 A single playable level defined by a group of lumps (`VERTEXES`, `LINEDEFS`, `SIDEDEFS`, `SECTORS`, `SEGS`, `SSECTORS`, `NODES`, etc.).
+_Avoid_: `Map` (conflicts with JS built-in)
 
 **Sector**:
 A convex region of the map floor/ceiling plane with a single floor height, ceiling height, and light level.
@@ -28,13 +29,17 @@ A directed line segment connecting two **Vertices** that forms a wall boundary b
 **Sidedef**:
 The texture and offset data attached to one side of a **Linedef**; a two-sided **Linedef** has a front and back **Sidedef**.
 
+**Vertex**:
+A 2D point (x, y) in map space; the primitive building block of all geometry.
+_Avoid_: point, coordinate, vert
+
 **Seg**:
 A subsection of a **Linedef** used by the BSP renderer; the unit of wall rendering.
 
 **SSector** (Sub-sector):
 A convex polygon made up of one or more **Segs**; the leaf node of the BSP tree.
 
-**BSP Node**:
+**BSP Node** (`BspNode` in code):
 An internal node of the BSP tree that partitions space with a splitter line into a front child and a back child.
 
 **BSP Tree**:
