@@ -16,7 +16,7 @@
     "dev:web": "npm run dev -w src/services/web",
     "lint": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "workspaces": [
@@ -25,6 +25,7 @@
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/jest": "^30.0.0",
     "eslint": "^10.5.0",
     "eslint-plugin-jest": "^29.15.2",
     "globals": "^17.6.0",

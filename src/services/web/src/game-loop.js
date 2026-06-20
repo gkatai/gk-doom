@@ -11,8 +11,9 @@ function update(_deltaTime) {
 
 /**
  * @param {HTMLCanvasElement} canvas
+ * @param {import("@gk-doom/wad").Wad} _wad
  */
-function start(canvas) {
+function start(canvas, _wad) {
   let lastTimestamp = 0;
 
   /**
