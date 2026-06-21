@@ -33,6 +33,10 @@ The texture and offset data attached to one side of a **Linedef**; a two-sided *
 A 2D point (x, y) in map space; the primitive building block of all geometry.
 _Avoid_: point, coordinate, vert
 
+**Thing**:
+A point entity placed in a map with a position, angle, type code, and flags; used to define player starts, enemies, and items. Player 1 start is type `1`.
+_Avoid_: entity, object, actor
+
 **Seg**:
 A subsection of a **Linedef** used by the BSP renderer; the unit of wall rendering.
 
@@ -51,6 +55,7 @@ The single controllable entity in the world; has a position, angle, and height w
 ## Relationships
 
 - A **WAD** contains one or more **Maps**
+- A **Map** contains zero or more **Things**
 - A **Map** contains a **BSP Tree** whose leaves are **SSectors**
 - An **SSector** is composed of one or more **Segs**
 - A **Seg** is a portion of a **Linedef**

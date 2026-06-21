@@ -1,19 +1,19 @@
-import * as Input from "./input.js";
 import * as Renderer from "./renderer.js";
 
 /**
+ * @param {import('./model.js').Model} model
  * @param {number} _deltaTime
  */
-function update(_deltaTime) {
+function update(model, _deltaTime) {
   // Read input state — stub for future issues
-  Input.consumeMouseDeltaX();
+  model.input.mouseDeltaX = 0;
 }
 
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {import("@gk-doom/wad").Wad} _wad
+ * @param {import('./model.js').Model} model
  */
-function start(canvas, _wad) {
+function start(canvas, model) {
   let lastTimestamp = 0;
 
   /**
@@ -23,8 +23,8 @@ function start(canvas, _wad) {
     const deltaTime = lastTimestamp === 0 ? 0 : timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    update(deltaTime);
-    Renderer.render(canvas, Input.isPointerLocked());
+    update(model, deltaTime);
+    Renderer.render(canvas, model);
 
     requestAnimationFrame(frame);
   }

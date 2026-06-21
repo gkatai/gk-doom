@@ -1,2 +1,3 @@
-export { parseMap } from './parse-map.js';
-export { traverseBsp } from './traverse-bsp.js';
+/** @typedef {import('./parse-map.js').DoomMap} DoomMap */
+export { parseMap } from "./parse-map.js";
+export { traverseBsp } from "./traverse-bsp.js";

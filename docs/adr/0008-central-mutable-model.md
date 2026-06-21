@@ -1,0 +1,5 @@
+# Central mutable model as single source of truth
+
+Game state — player position and angle, the parsed map, and input state (keys, pointer lock, mouse delta) — is held in a single mutable `model` object created by `createModel(wad, mapName)` and passed to every subsystem. `update()` and `render()` read from and write to this object directly rather than calling into module-private state. `input.js` holds only DOM wiring; its event listeners write key state, pointer lock, and mouse delta directly into `model.input`. `update()` resets `model.input.mouseDeltaX` to `0` after consuming it each frame.
+
+The alternative was to keep each module owning its own private state (`Input`, `Renderer`, `Player` each as singletons) and expose it through function calls. That was rejected because it scatters state across modules with no single place to inspect or reason about the full game state, and forces `update()` and `render()` to call into multiple modules as side-channels rather than reading a coherent snapshot.

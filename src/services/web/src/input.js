@@ -1,89 +1,47 @@
-/** @type {Record<string, boolean>} */
-const keys = {
-  w: false,
-  a: false,
-  s: false,
-  d: false,
-};
-
-let accumulatedDeltaX = 0;
-let pointerLocked = false;
-
-/**
- * @param {KeyboardEvent} e
- */
-function onKeyDown(e) {
-  const key = e.key.toLowerCase();
-  if (key in keys) {
-    keys[key] = true;
-  }
-}
-
-/**
- * @param {KeyboardEvent} e
- */
-function onKeyUp(e) {
-  const key = e.key.toLowerCase();
-  if (key in keys) {
-    keys[key] = false;
-  }
-}
-
-/**
- * @param {MouseEvent} e
- */
-function onMouseMove(e) {
-  if (pointerLocked) {
-    accumulatedDeltaX += e.movementX;
-  }
-}
+/** @typedef {'w' | 'a' | 's' | 'd'} MovementKey */
+/** @type {Record<MovementKey, true>} */
+const MOVEMENT_KEYS = { w: true, a: true, s: true, d: true };
 
 /**
  * Attaches DOM event listeners for keyboard and mouse input.
- * Call once at startup.
+ * All state is written directly into `model.input`.
+ *
+ * @param {import('./model.js').Model} model
  */
-function init() {
-  document.addEventListener("keydown", onKeyDown);
-  document.addEventListener("keyup", onKeyUp);
-  document.addEventListener("mousemove", onMouseMove);
+function init(model) {
+  const { input } = model;
+
+  document.addEventListener("keydown", (e) => {
+    const key = /** @type {MovementKey} */ (e.key.toLowerCase());
+    if (key in MOVEMENT_KEYS) {
+      input[key] = true;
+    }
+  });
+
+  document.addEventListener("keyup", (e) => {
+    const key = /** @type {MovementKey} */ (e.key.toLowerCase());
+    if (key in MOVEMENT_KEYS) {
+      input[key] = false;
+    }
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (input.pointerLocked) {
+      input.mouseDeltaX += e.movementX;
+    }
+  });
 
   document.addEventListener("pointerlockchange", () => {
-    pointerLocked = document.pointerLockElement !== null;
-    if (!pointerLocked) {
+    input.pointerLocked = document.pointerLockElement !== null;
+    if (!input.pointerLocked) {
       // Reset keys on unlock to prevent stuck keys
-      for (const key in keys) {
-        keys[key] = false;
-      }
-      accumulatedDeltaX = 0;
+      input.w = false;
+      input.a = false;
+      input.s = false;
+      input.d = false;
+      input.mouseDeltaX = 0;
     }
   });
 }
 
-/**
- * Returns whether the given key is currently pressed.
- * @param {string} key - Key name, e.g. `'w'`, `'a'`
- * @returns {boolean}
- */
-function getKey(key) {
-  return !!keys[key.toLowerCase()];
-}
-
-/**
- * Returns the accumulated horizontal mouse movement since the last call, then resets to 0.
- * @returns {number}
- */
-function consumeMouseDeltaX() {
-  const delta = accumulatedDeltaX;
-  accumulatedDeltaX = 0;
-  return delta;
-}
-
-/**
- * Returns whether the Pointer Lock is currently active.
- * @returns {boolean}
- */
-function isPointerLocked() {
-  return pointerLocked;
-}
-
-export { init, getKey, consumeMouseDeltaX, isPointerLocked };
+export { init };

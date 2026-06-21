@@ -31,9 +31,9 @@ function init(canvas) {
  * Clears the pixel buffer to black, flushes to the canvas via `putImageData`,
  * and toggles the overlay visibility based on pointer lock state.
  * @param {HTMLCanvasElement} _canvas
- * @param {boolean} isPointerLocked
+ * @param {import('./model.js').Model} model
  */
-function render(_canvas, isPointerLocked) {
+function render(_canvas, model) {
   // Clear buffer to black (RGBA 0,0,0,255)
   for (let i = 0; i < buffer.length; i += 4) {
     buffer[i] = 0; // R
@@ -50,7 +50,7 @@ function render(_canvas, isPointerLocked) {
 
   // Toggle overlay visibility
   if (overlay) {
-    if (isPointerLocked) {
+    if (model.input.pointerLocked) {
       overlay.classList.add("hidden");
     } else {
       overlay.classList.remove("hidden");

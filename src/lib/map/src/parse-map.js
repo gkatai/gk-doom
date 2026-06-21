@@ -31,7 +31,12 @@
  */
 
 /**
+ * @typedef {{ x: number, y: number, angle: number, type: number, flags: number }} Thing
+ */
+
+/**
  * @typedef {Object} DoomMap
+ * @property {Thing[]}   things
  * @property {Vertex[]}  vertices
  * @property {Linedef[]} linedefs
  * @property {Sidedef[]} sidedefs
@@ -94,8 +99,9 @@ function decodeBspChild(raw) {
 function parseMap(wad, mapName) {
   const markerIndex = wad.getLumpIndex(mapName);
 
-  // Fetch raw lump bytes for each of the 7 map lumps
+  // Fetch raw lump bytes for each of the map lumps
   const lumps = {
+    THINGS: wad.getLumpAt(markerIndex + LUMP_OFFSETS.THINGS),
     VERTEXES: wad.getLumpAt(markerIndex + LUMP_OFFSETS.VERTEXES),
     LINEDEFS: wad.getLumpAt(markerIndex + LUMP_OFFSETS.LINEDEFS),
     SIDEDEFS: wad.getLumpAt(markerIndex + LUMP_OFFSETS.SIDEDEFS),
@@ -105,9 +111,34 @@ function parseMap(wad, mapName) {
     NODES: wad.getLumpAt(markerIndex + LUMP_OFFSETS.NODES),
   };
 
+  // --- THINGS (10 bytes/record) ---
+  const tBytes = lumps.THINGS;
+  const tView = new DataView(
+    tBytes.buffer,
+    tBytes.byteOffset,
+    tBytes.byteLength,
+  );
+  const tCount = tBytes.byteLength / 10;
+  /** @type {Thing[]} */
+  const things = [];
+  for (let i = 0; i < tCount; i++) {
+    const o = i * 10;
+    things.push({
+      x: tView.getInt16(o, true),
+      y: tView.getInt16(o + 2, true),
+      angle: tView.getUint16(o + 4, true),
+      type: tView.getUint16(o + 6, true),
+      flags: tView.getUint16(o + 8, true),
+    });
+  }
+
   // --- VERTEXES (4 bytes/record) ---
   const vBytes = lumps.VERTEXES;
-  const vView = new DataView(vBytes.buffer, vBytes.byteOffset, vBytes.byteLength);
+  const vView = new DataView(
+    vBytes.buffer,
+    vBytes.byteOffset,
+    vBytes.byteLength,
+  );
   const vCount = vBytes.byteLength / 4;
   /** @type {Vertex[]} */
   const vertices = [];
@@ -121,7 +152,11 @@ function parseMap(wad, mapName) {
 
   // --- LINEDEFS (14 bytes/record) ---
   const lBytes = lumps.LINEDEFS;
-  const lView = new DataView(lBytes.buffer, lBytes.byteOffset, lBytes.byteLength);
+  const lView = new DataView(
+    lBytes.buffer,
+    lBytes.byteOffset,
+    lBytes.byteLength,
+  );
   const lCount = lBytes.byteLength / 14;
   /** @type {Linedef[]} */
   const linedefs = [];
@@ -140,7 +175,11 @@ function parseMap(wad, mapName) {
 
   // --- SIDEDEFS (30 bytes/record) ---
   const sBytes = lumps.SIDEDEFS;
-  const sView = new DataView(sBytes.buffer, sBytes.byteOffset, sBytes.byteLength);
+  const sView = new DataView(
+    sBytes.buffer,
+    sBytes.byteOffset,
+    sBytes.byteLength,
+  );
   const sCount = sBytes.byteLength / 30;
   /** @type {Sidedef[]} */
   const sidedefs = [];
@@ -158,7 +197,11 @@ function parseMap(wad, mapName) {
 
   // --- SECTORS (26 bytes/record) ---
   const secBytes = lumps.SECTORS;
-  const secView = new DataView(secBytes.buffer, secBytes.byteOffset, secBytes.byteLength);
+  const secView = new DataView(
+    secBytes.buffer,
+    secBytes.byteOffset,
+    secBytes.byteLength,
+  );
   const secCount = secBytes.byteLength / 26;
   /** @type {Sector[]} */
   const sectors = [];
@@ -177,7 +220,11 @@ function parseMap(wad, mapName) {
 
   // --- SEGS (12 bytes/record) ---
   const segBytes = lumps.SEGS;
-  const segView = new DataView(segBytes.buffer, segBytes.byteOffset, segBytes.byteLength);
+  const segView = new DataView(
+    segBytes.buffer,
+    segBytes.byteOffset,
+    segBytes.byteLength,
+  );
   const segCount = segBytes.byteLength / 12;
   /** @type {Seg[]} */
   const segs = [];
@@ -195,7 +242,11 @@ function parseMap(wad, mapName) {
 
   // --- SSECTORS (4 bytes/record) ---
   const ssBytes = lumps.SSECTORS;
-  const ssView = new DataView(ssBytes.buffer, ssBytes.byteOffset, ssBytes.byteLength);
+  const ssView = new DataView(
+    ssBytes.buffer,
+    ssBytes.byteOffset,
+    ssBytes.byteLength,
+  );
   const ssCount = ssBytes.byteLength / 4;
   /** @type {SSector[]} */
   const ssectors = [];
@@ -209,7 +260,11 @@ function parseMap(wad, mapName) {
 
   // --- NODES (28 bytes/record) ---
   const nBytes = lumps.NODES;
-  const nView = new DataView(nBytes.buffer, nBytes.byteOffset, nBytes.byteLength);
+  const nView = new DataView(
+    nBytes.buffer,
+    nBytes.byteOffset,
+    nBytes.byteLength,
+  );
   const nCount = nBytes.byteLength / 28;
   /** @type {BspNode[]} */
   const nodes = [];
@@ -237,7 +292,16 @@ function parseMap(wad, mapName) {
     });
   }
 
-  return { vertices, linedefs, sidedefs, sectors, segs, ssectors, nodes };
+  return {
+    things,
+    vertices,
+    linedefs,
+    sidedefs,
+    sectors,
+    segs,
+    ssectors,
+    nodes,
+  };
 }
 
 export { parseMap };
