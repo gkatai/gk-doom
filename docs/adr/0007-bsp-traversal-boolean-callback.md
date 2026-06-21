@@ -1,0 +1,3 @@
+# BSP traversal uses a boolean callback to support early exit
+
+`traverseBsp` accepts a visitor callback that returns `boolean`. Returning `false` halts the traversal immediately. This was chosen over a void callback so that the renderer (issue #7) can short-circuit the moment every screen column is occluded by a solid wall — exactly the optimisation the classic Doom engine uses to avoid rendering the entire map every frame. A void callback would force an awkward workaround (e.g. a thrown sentinel) to achieve the same effect, and retrofitting the boolean return after the renderer is built on top of it would require touching both sides of the interface.

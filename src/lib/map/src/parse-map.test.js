@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseWad } from "@gk-doom/wad";
-import { parseMap } from "./index.js";
+import { parseMap } from "./parse-map.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
