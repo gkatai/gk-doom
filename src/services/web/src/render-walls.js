@@ -118,12 +118,17 @@ function renderWalls(buffer, map, player) {
   function processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ) {
     const light = sector.light;
 
+    // Perspective-correct depth interpolation: 1/depth is linear in screen space
+    const invCay = 1 / cay;
+    const invCby = 1 / cby;
+    const dx = x2 - x1 || 1; // avoid /0 when seg projects to a single column
+
     for (let x = colLeft; x <= colRight; x++) {
       if (topClip[x] > bottomClip[x]) continue; // column already fully closed
 
-      // Interpolate camera depth across the seg for column x
-      const t = (x - x1) / (x2 - x1);
-      const depth = cay + t * (cby - cay);
+      // Interpolate 1/depth linearly, then reciprocate for true perspective depth
+      const t = (x - x1) / dx;
+      const depth = 1 / (invCay + t * (invCby - invCay));
 
       // Wall top/bottom rows
       let wallTop = Math.floor(HALF_H - ((sector.ceilH - eyeZ) / depth) * PROJ_DIST);
@@ -164,12 +169,17 @@ function renderWalls(buffer, map, player) {
     const backSector  = map.sectors[backSidedef.sector];
     const light = sector.light;
 
+    // Perspective-correct depth interpolation: 1/depth is linear in screen space
+    const invCay = 1 / cay;
+    const invCby = 1 / cby;
+    const dx = x2 - x1 || 1; // avoid /0 when seg projects to a single column
+
     for (let x = colLeft; x <= colRight; x++) {
       if (topClip[x] > bottomClip[x]) continue; // column already fully closed
 
-      // Interpolate depth
-      const t = (x - x1) / (x2 - x1);
-      const depth = cay + t * (cby - cay);
+      // Interpolate 1/depth linearly, then reciprocate for true perspective depth
+      const t = (x - x1) / dx;
+      const depth = 1 / (invCay + t * (invCby - invCay));
 
       // Project all four heights into screen rows
       let frontCeilRow  = Math.floor(HALF_H - (sector.ceilH  - eyeZ) / depth * PROJ_DIST);

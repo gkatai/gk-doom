@@ -1,0 +1,3 @@
+# Point collision instead of player radius
+
+Classic DOOM uses a 16-unit radius circle swept through space for collision detection. We use a point model instead: a 1-sided Linedef blocks movement if the player's movement segment (old position → new position) intersects it. Sliding is achieved by axis decomposition — the X step and Y step are each tested independently, and only the crossing axis is discarded. This was chosen because the issue scope is map navigation, not faithful DOOM physics; point collision is sufficient to prevent the player walking through solid walls, and the implementation is a fraction of the complexity. Circle collision can be added later as a non-breaking change by introducing a `radius` field on the Player and expanding the intersection test.

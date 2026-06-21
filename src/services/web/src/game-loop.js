@@ -1,12 +1,12 @@
 import * as Renderer from "./renderer.js";
+import { applyMovement } from "./movement.js";
 
 /**
  * @param {import('./model.js').Model} model
- * @param {number} _deltaTime
+ * @param {number} deltaTime
  */
-function update(model, _deltaTime) {
-  // Read input state — stub for future issues
-  model.input.mouseDeltaX = 0;
+function update(model, deltaTime) {
+  applyMovement(model, deltaTime);
 }
 
 /**
