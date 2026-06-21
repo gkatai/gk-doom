@@ -40,7 +40,7 @@ function render(_canvas, model) {
   }
 
   // Draw walls
-  renderWalls(buffer, model.map, model.player);
+  renderWalls(buffer, model.map, model.player, model.textures);
 
   // Copy buffer into ImageData
   imageData.data.set(buffer);

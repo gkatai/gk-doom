@@ -30,8 +30,9 @@ function setPixel(buffer, x, y, r, g, b) {
  * @param {Uint8ClampedArray} buffer
  * @param {import('@gk-doom/map').DoomMap} map
  * @param {{ x: number, y: number, angle: number }} player
+ * @param {Map<string, { width: number, height: number, rgba: Uint8Array }>} textures
  */
-function renderWalls(buffer, map, player) {
+function renderWalls(buffer, map, player, textures) {
   const topClip    = new Int16Array(WIDTH);   // topmost still-open row; init 0
   const bottomClip = new Int16Array(WIDTH);   // bottommost still-open row; init HEIGHT-1
   bottomClip.fill(HEIGHT - 1);
@@ -106,17 +107,28 @@ function renderWalls(buffer, map, player) {
     if (colLeft > colRight) return;
 
     if (linedef.left === -1) {
-      processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ);
+      processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ, seg, linedef);
     } else {
       processPortalSeg(x1, x2, colLeft, colRight, cay, cby, sector, linedef, eyeZ);
     }
   }
 
   /**
-   * Draw a one-sided (solid) Seg: ceiling flat, wall, floor flat per column.
+   * Draw a one-sided (solid) Seg: ceiling flat, wall (textured), floor flat per column.
    */
-  function processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ) {
+  function processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ, seg, linedef) {
     const light = sector.light;
+
+    // Resolve texture and sidedef
+    const sidedefIndex = seg.side === 0 ? linedef.right : linedef.left;
+    const sidedef = map.sidedefs[sidedefIndex];
+    const tex = textures ? textures.get(sidedef.middleTex) : null;
+    const lowerUnpegged = (linedef.flags & 0x10) !== 0;
+
+    // World-space seg length for U interpolation
+    const v1 = map.vertices[seg.v1];
+    const v2 = map.vertices[seg.v2];
+    const segWorldLength = Math.hypot(v2.x - v1.x, v2.y - v1.y);
 
     // Perspective-correct depth interpolation: 1/depth is linear in screen space
     const invCay = 1 / cay;
@@ -128,7 +140,8 @@ function renderWalls(buffer, map, player) {
 
       // Interpolate 1/depth linearly, then reciprocate for true perspective depth
       const t = (x - x1) / dx;
-      const depth = 1 / (invCay + t * (invCby - invCay));
+      const invDepthAtX = invCay + t * (invCby - invCay);
+      const depth = 1 / invDepthAtX;
 
       // Wall top/bottom rows
       let wallTop = Math.floor(HALF_H - ((sector.ceilH - eyeZ) / depth) * PROJ_DIST);
@@ -146,10 +159,38 @@ function renderWalls(buffer, map, player) {
       for (let row = topClip[x]; row < clampedWallTop; row++) {
         setPixel(buffer, x, row, 50, 50, 80);
       }
+
       // Wall: clampedWallTop .. clampedWallBottom
-      for (let row = clampedWallTop; row <= clampedWallBottom; row++) {
-        setPixel(buffer, x, row, light, light, light);
+      if (tex) {
+        // --- U coordinate (perspective-correct) ---
+        // tPersp = (u1/z1 + t*(u2/z2 - u1/z1)) / invDepthAtX, with u1=0, u2=1
+        const tPersp = (t * invCby) / invDepthAtX;
+        const worldU = seg.offset + tPersp * segWorldLength + sidedef.xOffset;
+        const texU = ((Math.floor(worldU) % tex.width) + tex.width) % tex.width;
+
+        // --- V anchor ---
+        const vAnchor = lowerUnpegged
+          ? sector.floorH + tex.height
+          : sector.ceilH;
+
+        for (let row = clampedWallTop; row <= clampedWallBottom; row++) {
+          const worldH = eyeZ - (row - HALF_H) * depth / PROJ_DIST;
+          let texV = Math.floor(vAnchor - worldH + sidedef.yOffset);
+          texV = ((texV % tex.height) + tex.height) % tex.height;
+
+          const i = (texV * tex.width + texU) * 4;
+          const r = Math.floor(tex.rgba[i]     * light / 255);
+          const g = Math.floor(tex.rgba[i + 1] * light / 255);
+          const b = Math.floor(tex.rgba[i + 2] * light / 255);
+          setPixel(buffer, x, row, r, g, b);
+        }
+      } else {
+        // Fallback: flat colour
+        for (let row = clampedWallTop; row <= clampedWallBottom; row++) {
+          setPixel(buffer, x, row, light, light, light);
+        }
       }
+
       // Floor: clampedWallBottom+1 .. bottomClip[x]
       for (let row = clampedWallBottom + 1; row <= bottomClip[x]; row++) {
         setPixel(buffer, x, row, 80, 80, 80);

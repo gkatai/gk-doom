@@ -1,0 +1,5 @@
+{
+  "name": "@gk-doom/textures",
+  "type": "module",
+  "main": "src/index.js"
+}

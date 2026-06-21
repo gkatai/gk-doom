@@ -8,8 +8,8 @@
  * @param {number} deltaTime  milliseconds since last frame
  */
 
-const MOVE_SPEED = 875; // map units / second
-const ROT_SPEED = 0.003; // radians / pixel
+const MOVE_SPEED = 400; // map units / second
+const ROT_SPEED = 0.0015; // radians / pixel
 
 /**
  * Cross product of 2D vectors (B−A) × (C−A).

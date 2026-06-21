@@ -7,6 +7,11 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "@gk-doom/wad": "*",
+    "@gk-doom/map": "*",
+    "@gk-doom/textures": "*"
+  },
   "devDependencies": {
     "vite": "^8.0.12"
   }

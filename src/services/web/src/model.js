@@ -1,10 +1,12 @@
 import { parseMap } from "@gk-doom/map";
+import { buildTextureCache } from "@gk-doom/textures";
 
 /**
  * @typedef {Object} Model
  * @property {{ x: number, y: number, angle: number }} player
  * @property {import('@gk-doom/map').DoomMap} map
  * @property {{ w: boolean, a: boolean, s: boolean, d: boolean, pointerLocked: boolean, mouseDeltaX: number }} input
+ * @property {Map<string, { width: number, height: number, rgba: Uint8Array }>} textures
  */
 
 /**
@@ -16,6 +18,7 @@ import { parseMap } from "@gk-doom/map";
  */
 function createModel(wad, mapName) {
   const map = parseMap(wad, mapName);
+  const textures = buildTextureCache(wad);
 
   // Find the first Thing with type === 1 (Player 1 start)
   const playerThing = map.things.find((t) => t.type === 1);
@@ -30,6 +33,7 @@ function createModel(wad, mapName) {
       angle: (playerThing.angle * Math.PI) / 180,
     },
     map,
+    textures,
     input: {
       w: false,
       a: false,

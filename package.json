@@ -14,6 +14,7 @@
   "type": "module",
   "scripts": {
     "dev:web": "npm run dev -w src/services/web",
+    "build:web": "npm run build -w src/services/web",
     "lint": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
@@ -22,7 +23,8 @@
   "workspaces": [
     "src/services/web",
     "src/lib/wad",
-    "src/lib/map"
+    "src/lib/map",
+    "src/lib/textures"
   ],
   "devDependencies": {
     "@eslint/js": "^10.0.1",
