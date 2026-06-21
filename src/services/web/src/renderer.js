@@ -1,8 +1,5 @@
-/** @type {number} Internal rendering width in pixels */
-export const WIDTH = 640;
-
-/** @type {number} Internal rendering height in pixels */
-export const HEIGHT = 400;
+import { renderWalls } from "./render-walls.js";
+import { WIDTH, HEIGHT } from "./render-constants.js";
 
 const buffer = new Uint8ClampedArray(WIDTH * HEIGHT * 4);
 
@@ -42,6 +39,9 @@ function render(_canvas, model) {
     buffer[i + 3] = 255; // A
   }
 
+  // Draw walls
+  renderWalls(buffer, model.map, model.player);
+
   // Copy buffer into ImageData
   imageData.data.set(buffer);
 
@@ -66,4 +66,4 @@ function getBuffer() {
   return buffer;
 }
 
-export { init, render, getBuffer };
+export { init, render, getBuffer, WIDTH, HEIGHT };

@@ -68,6 +68,22 @@ The single controllable entity in the world; has a position, angle, and height w
 > **Dev:** "When the player moves, do we update the Sector?"
 > **Domain expert:** "Strictly speaking, we update the Player's position and then determine which SSector contains them by traversing the BSP Tree from root to leaf."
 
+**Column**:
+A single vertical strip of pixels (one pixel wide, HEIGHT pixels tall) in the pixel buffer; the unit of wall rendering.
+_Avoid_: pixel strip, vertical slice
+
+**Solid Column**:
+A **Column** that has been fully painted by a closer wall during the current frame; used to skip overdraw from farther Segs.
+_Avoid_: occluded column, filled column
+
+**Eye Height**:
+The player's vertical viewpoint position in map units; defined as the front sector's `floorH + 41`.
+_Avoid_: view height, camera height
+
+**Pixel Buffer**:
+The `Uint8ClampedArray` (640 × 400 × 4 bytes, RGBA) written to each frame and flushed to the canvas via `putImageData`.
+_Avoid_: frame buffer, image buffer
+
 **Input Module**:
 The single object that tracks real-time control state; boolean flags for WASD keys and an accumulated mouse X-delta that resets each frame.
 _Avoid_: event listeners, keyboard handler, raw event stream
