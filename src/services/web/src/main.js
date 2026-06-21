@@ -16,7 +16,7 @@ async function init() {
   if (!overlay) throw new Error("Overlay element #overlay not found");
 
   // Fetch and parse the WAD file
-  const response = await fetch("/doom1.wad");
+  const response = await fetch(`${import.meta.env.BASE_URL}doom1.wad`);
   const buffer = await response.arrayBuffer();
   const wad = parseWad(buffer);
 
