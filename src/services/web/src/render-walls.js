@@ -23,28 +23,40 @@ function setPixel(buffer, x, y, r, g, b) {
 }
 
 /**
- * Project one-sided Segs into screen-space Columns and draw solid-colour walls.
- * Floor and ceiling regions are filled with flat colours.
+ * Render walls via BSP front-to-back traversal. Handles both one-sided Segs
+ * (solid walls) and two-sided Segs (portals with upper/lower wall bands).
+ * Uses per-column topClip/bottomClip arrays (ADR-0010) to track open regions.
  *
  * @param {Uint8ClampedArray} buffer
  * @param {import('@gk-doom/map').DoomMap} map
  * @param {{ x: number, y: number, angle: number }} player
  */
 function renderWalls(buffer, map, player) {
-  /** @type {Uint8Array} 0 = open, 1 = filled */
-  const columnFilled = new Uint8Array(WIDTH);
+  const topClip    = new Int16Array(WIDTH);   // topmost still-open row; init 0
+  const bottomClip = new Int16Array(WIDTH);   // bottommost still-open row; init HEIGHT-1
+  bottomClip.fill(HEIGHT - 1);
   let filledCount = 0;
 
   const cos = Math.cos(player.angle);
   const sin = Math.sin(player.angle);
 
+  // Compute eye height once from the player's actual sector (first SSector visited
+  // by the BSP traversal is always the player's current SSector).
+  let eyeZ = 41; // fallback if map has no segs
+  traverseBsp(map.nodes, player.x, player.y, (ssectorIndex) => {
+    const firstSeg = map.segs[map.ssectors[ssectorIndex].firstSeg];
+    const ld = map.linedefs[firstSeg.linedef];
+    const sd = map.sidedefs[firstSeg.side === 0 ? ld.right : ld.left];
+    eyeZ = map.sectors[sd.sector].floorH + 41;
+    return false; // stop immediately — we only need the player's SSector
+  });
+
   /**
+   * Transform and project a Seg, then branch to solid or portal rendering.
    * @param {*} seg
    */
   function processSeg(seg) {
-    // --- Step 1c: one-sided filter ---
     const linedef = map.linedefs[seg.linedef];
-    if (linedef.left !== -1) return; // two-sided Seg — skip (portal)
 
     // --- Step 1d: front sector lookup ---
     const sidedefIndex = seg.side === 0 ? linedef.right : linedef.left;
@@ -93,13 +105,21 @@ function renderWalls(buffer, map, player) {
     const colRight = Math.min(WIDTH - 1, Math.max(x1, x2));
     if (colLeft > colRight) return;
 
-    // --- Step 1i: per-column wall height calculation ---
-    const eyeZ = sector.floorH + 41;
+    if (linedef.left === -1) {
+      processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ);
+    } else {
+      processPortalSeg(x1, x2, colLeft, colRight, cay, cby, sector, linedef, eyeZ);
+    }
+  }
+
+  /**
+   * Draw a one-sided (solid) Seg: ceiling flat, wall, floor flat per column.
+   */
+  function processSolidSeg(x1, x2, colLeft, colRight, cay, cby, sector, eyeZ) {
     const light = sector.light;
 
     for (let x = colLeft; x <= colRight; x++) {
-      // Skip if already filled
-      if (columnFilled[x]) continue;
+      if (topClip[x] > bottomClip[x]) continue; // column already fully closed
 
       // Interpolate camera depth across the seg for column x
       const t = (x - x1) / (x2 - x1);
@@ -113,22 +133,96 @@ function renderWalls(buffer, map, player) {
       wallTop = Math.max(0, Math.min(HEIGHT - 1, wallTop));
       wallBottom = Math.max(0, Math.min(HEIGHT - 1, wallBottom));
 
-      // --- Step 1j: fill the column ---
-      // Ceiling: rows 0 .. wallTop-1
-      for (let row = 0; row < wallTop; row++) {
+      // Clamp wall band to the current open clip range
+      const clampedWallTop    = Math.max(wallTop,    topClip[x]);
+      const clampedWallBottom = Math.min(wallBottom, bottomClip[x]);
+
+      // Ceiling: topClip[x] .. clampedWallTop-1
+      for (let row = topClip[x]; row < clampedWallTop; row++) {
         setPixel(buffer, x, row, 50, 50, 80);
       }
-      // Wall: rows wallTop .. wallBottom
-      for (let row = wallTop; row <= wallBottom; row++) {
+      // Wall: clampedWallTop .. clampedWallBottom
+      for (let row = clampedWallTop; row <= clampedWallBottom; row++) {
         setPixel(buffer, x, row, light, light, light);
       }
-      // Floor: rows wallBottom+1 .. HEIGHT-1
-      for (let row = wallBottom + 1; row < HEIGHT; row++) {
+      // Floor: clampedWallBottom+1 .. bottomClip[x]
+      for (let row = clampedWallBottom + 1; row <= bottomClip[x]; row++) {
         setPixel(buffer, x, row, 80, 80, 80);
       }
 
-      columnFilled[x] = 1;
+      topClip[x] = HEIGHT; // close column
       filledCount++;
+    }
+  }
+
+  /**
+   * Draw a two-sided (portal) Seg: upper/lower wall bands, ceiling/floor flat
+   * fills, then narrow the clip range for Segs further back.
+   */
+  function processPortalSeg(x1, x2, colLeft, colRight, cay, cby, sector, linedef, eyeZ) {
+    const backSidedef = map.sidedefs[linedef.left];
+    const backSector  = map.sectors[backSidedef.sector];
+    const light = sector.light;
+
+    for (let x = colLeft; x <= colRight; x++) {
+      if (topClip[x] > bottomClip[x]) continue; // column already fully closed
+
+      // Interpolate depth
+      const t = (x - x1) / (x2 - x1);
+      const depth = cay + t * (cby - cay);
+
+      // Project all four heights into screen rows
+      let frontCeilRow  = Math.floor(HALF_H - (sector.ceilH  - eyeZ) / depth * PROJ_DIST);
+      let frontFloorRow = Math.floor(HALF_H - (sector.floorH - eyeZ) / depth * PROJ_DIST);
+      let backCeilRow   = Math.floor(HALF_H - (backSector.ceilH  - eyeZ) / depth * PROJ_DIST);
+      let backFloorRow  = Math.floor(HALF_H - (backSector.floorH - eyeZ) / depth * PROJ_DIST);
+
+      // Clamp all four to [0, HEIGHT - 1]
+      frontCeilRow  = Math.max(0, Math.min(HEIGHT - 1, frontCeilRow));
+      frontFloorRow = Math.max(0, Math.min(HEIGHT - 1, frontFloorRow));
+      backCeilRow   = Math.max(0, Math.min(HEIGHT - 1, backCeilRow));
+      backFloorRow  = Math.max(0, Math.min(HEIGHT - 1, backFloorRow));
+
+      // 4c — Ceiling flat fill (above front ceiling)
+      const ceilDrawTop    = topClip[x];
+      const ceilDrawBottom = Math.min(frontCeilRow - 1, bottomClip[x]);
+      for (let row = ceilDrawTop; row <= ceilDrawBottom; row++) {
+        setPixel(buffer, x, row, 50, 50, 80);
+      }
+
+      // 4d — Upper Wall band (front ceiling → back ceiling)
+      const upperTop    = Math.max(frontCeilRow, topClip[x]);
+      const upperBottom = Math.min(backCeilRow - 1, bottomClip[x]);
+      if (upperTop <= upperBottom) {
+        for (let row = upperTop; row <= upperBottom; row++) {
+          setPixel(buffer, x, row, light, light, light);
+        }
+      }
+
+      // 4e — Lower Wall band (back floor → front floor)
+      const lowerTop    = Math.max(backFloorRow + 1, topClip[x]);
+      const lowerBottom = Math.min(frontFloorRow, bottomClip[x]);
+      if (lowerTop <= lowerBottom) {
+        for (let row = lowerTop; row <= lowerBottom; row++) {
+          setPixel(buffer, x, row, light, light, light);
+        }
+      }
+
+      // 4f — Floor flat fill (below front floor)
+      const floorDrawTop    = Math.max(frontFloorRow + 1, topClip[x]);
+      const floorDrawBottom = bottomClip[x];
+      for (let row = floorDrawTop; row <= floorDrawBottom; row++) {
+        setPixel(buffer, x, row, 80, 80, 80);
+      }
+
+      // 4g — Narrow the clip range
+      const newTop    = Math.max(topClip[x],    backCeilRow);
+      const newBottom = Math.min(bottomClip[x], backFloorRow);
+
+      topClip[x]    = newTop;
+      bottomClip[x] = newBottom;
+
+      if (newTop > newBottom) filledCount++;
     }
   }
 

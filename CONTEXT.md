@@ -37,6 +37,18 @@ _Avoid_: point, coordinate, vert
 A point entity placed in a map with a position, angle, type code, and flags; used to define player starts, enemies, and items. Player 1 start is type `1`.
 _Avoid_: entity, object, actor
 
+**Portal**:
+A two-sided **Seg** — backed by a **Linedef** with both a front and back **Sidedef** — that opens a view into an adjacent **Sector**; renders an **Upper Wall** and/or **Lower Wall** around the opening but leaves the middle **Column** range open for further rendering.
+_Avoid_: window, opening, two-sided seg
+
+**Upper Wall**:
+The wall band on a **Portal** between the front **Sector**'s ceiling and the back **Sector**'s lower ceiling; only exists when the back ceiling is lower than the front ceiling.
+_Avoid_: top band, ceiling step
+
+**Lower Wall**:
+The wall band on a **Portal** between the back **Sector**'s higher floor and the front **Sector**'s floor; only exists when the back floor is higher than the front floor.
+_Avoid_: bottom band, floor step
+
 **Seg**:
 A subsection of a **Linedef** used by the BSP renderer; the unit of wall rendering.
 
